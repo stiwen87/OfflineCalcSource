@@ -1,0 +1,24 @@
+﻿@page "/"
+@page "/atlantis"
+
+<h3>Atlantis</h3>
+
+@code {
+    private static string[][] rawCosts = [["10", "1 m", "100 t", "10 ee", "1 jj", "10 nn"],
+        ["50", "1 t", "10 cc", "10 gg", "1 ll"],
+        ["100", "10 t", "100 cc", "1 hh"]];
+    private static BigNum[][] Costs = rawCosts.Select(x => x.Select(y => new BigNum(y)).ToArray()).ToArray();
+
+    private static double[][] basicOutputs = [[5, 3.5, 2.25, 1.38, .813, .469],
+        [6.67, 3.33, 1.48, .617, .247],
+        [7.5, 3.13, 1.09, .352]];
+    private static double[][] basicCommonPowers = [[1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1],
+        [1, 1, 1, 1]];
+    private int[] generatorCount = basicCommonPowers.Select(x => x.Length).ToArray();
+    private static double[] rarePowers = [1, 1, 1];
+    private int[] commonMulti = [5, 5, 5];
+
+}
+
+<Calcs IndustryCount="3" GeneratorCount="generatorCount" Costs="Costs" basicOutputs="basicOutputs" basicCommonPowers="basicCommonPowers" rarePowers="rarePowers" commonMulti="commonMulti" rareMulti="3" />

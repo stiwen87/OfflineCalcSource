@@ -1,0 +1,26 @@
+﻿@page "/music"
+
+<h3>Music</h3>
+
+@code {
+    private static string[][] rawCosts = [["10", "10 k", "1 t", "100 cc", "10 ii", "1 rr"],
+        ["25", "1 b", "10 cc", "10 ii", "10 oo"],
+        ["50", "10 t", "10 ee", "10 ll"],
+        ["10 k", "10 aa", "100 ff"]];
+    private static BigNum[][] Costs = rawCosts.Select(x => x.Select(y => new BigNum(y)).ToArray()).ToArray();
+
+    private static double[][] basicOutputs = [[5, 3.5, 2.25, 1.38, .813, .469],
+        [4, 3.5, 1.5, .531, .172],
+        [6, 5.33, 1.61, .389],
+        [8, 7, 1.11]];
+    private static double[][] basicCommonPowers = [[1, 2, 3, 4, 5, 6],
+        [2, 4, 6, 8, 10],
+        [3, 6, 9, 12],
+        [4, 8, 12]];
+    private int[] generatorCount = basicCommonPowers.Select(x => x.Length).ToArray();
+    private static double[] rarePowers = [2.5, 3, 3.5, 4];
+    private int[] commonMulti = [3,3,3,3];
+
+}
+
+<Calcs IndustryCount="4" GeneratorCount="generatorCount" Costs="Costs" basicOutputs="basicOutputs" basicCommonPowers="basicCommonPowers" rarePowers="rarePowers" commonMulti="commonMulti" rareMulti="6" />

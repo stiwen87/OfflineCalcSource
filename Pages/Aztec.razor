@@ -1,0 +1,30 @@
+﻿@page "/aztec"
+
+<h3>Aztec</h3>
+
+@code {
+    private static string[][] rawCosts = [["10", "1 m", "100 aa", "1 ee", "1 ll", "100 rr", "100 vv"],
+        ["100", "1 t", "10 ee", "100 ii", "100 nn", "10 ss"],
+        ["1000", "100 bb", "100 ff", "1 hh", "10 nn"]];
+    private static BigNum[][] Costs = rawCosts.Select(x => x.Select(y => new BigNum(y)).ToArray()).ToArray();
+
+    private static double[][] basicOutputs = [[3, 2.5, 1.75, 1.13, 0.688, 0.406, 0.406],
+        [3, 2.5, 1.75, 1.13, .688, .688],
+        [3, 2.5, 1.75, 1.75, 1.13]];
+    private static double[][] basicCommonPowers = [[1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1]];
+    private int[] generatorCount = basicCommonPowers.Select(x => x.Length).ToArray();
+    private static double[] rarePowers = [.5,.5,.5];
+    private static double[] globalProdPower = [.5];
+    private int[] commonMulti = [3,4,5];
+    private int rareMulti = 4;
+    private bool globalProd = true;
+    private bool[] canCrit = [true, true, true];
+    private int[] critChance = [0, 15, 30, 45, 60, 75, 90];
+    private int basicCritBonus = 256;
+    private int[] discount = [1,10,100,1000,10000,100000];
+}
+
+
+<Calcs IndustryCount="3" GeneratorCount="generatorCount" Costs="Costs" basicOutputs="basicOutputs" basicCommonPowers="basicCommonPowers" rarePowers="rarePowers" commonMulti="commonMulti" globalProd= "globalProd" critChance ="critChance" basicCritBonus ="basicCritBonus" globalProdPower="globalProdPower" canCrit="canCrit" rareMulti="rareMulti" discount="discount"/>

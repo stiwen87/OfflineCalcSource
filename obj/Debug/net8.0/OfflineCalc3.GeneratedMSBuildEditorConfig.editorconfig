@@ -1,0 +1,79 @@
+is_global = true
+build_property.EnableAotAnalyzer = 
+build_property.EnableSingleFileAnalyzer = 
+build_property.EnableTrimAnalyzer = false
+build_property.IncludeAllContentForSelfExtract = 
+build_property.TargetFramework = net8.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = false
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = browser
+build_property.RootNamespace = OfflineCalc3
+build_property.RootNamespace = OfflineCalc3
+build_property.ProjectDir = C:\Users\kacgo\source\repos\OfflineCalc3\OfflineCalc3\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = false
+build_property.RazorLangVersion = 8.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = C:\Users\kacgo\source\repos\OfflineCalc3\OfflineCalc3
+build_property._RazorSourceGeneratorDebug = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/App.razor]
+build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Atlantis.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXRsYW50aXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Aztec.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQXp0ZWMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Industry.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW5kdXN0cnkucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/MLG.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTUxHLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Music.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTXVzaWMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Ninja.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTmluamEucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Oil.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcT2lsLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Shield.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hpZWxkLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Space.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3BhY2UucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Layout/MainLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE1haW5MYXlvdXQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-o2rx60bpnl
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Layout/NavMenu.razor]
+build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE5hdk1lbnUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-1vgeucerub
+
+[C:/Users/kacgo/source/repos/OfflineCalc3/OfflineCalc3/Pages/Calcs.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ2FsY3MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-3qe75uigxf

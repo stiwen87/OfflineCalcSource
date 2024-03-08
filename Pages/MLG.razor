@@ -1,0 +1,36 @@
+﻿@page "/mlg"
+
+<h3>Motherland Games</h3>
+
+@code {
+    private static string[][] rawCosts = [["10", "10000", "1 t", "100 cc", "100 ii", "10 oo", "10 yy"],
+        ["25", "1 b", "10 cc", "100 ii", "10 oo", "10 yy"],
+        ["50", "10 t", "10 ee", "1 nn", "1 vv"],
+        ["10 k", "10 bb", "10 ii", "10 qq"]];
+    private static BigNum[][] Costs = rawCosts.Select(x => x.Select(y => new BigNum(y)).ToArray()).ToArray();
+
+    private static double[][] basicOutputs = [[2, 1.67, .889, .407, .173, .07, 0.0274],
+        [4, 3.5, 1.5, 0.531, 0.172, 0.0527],
+        [6, 5.33, 1.61, 0.389, 0.0849],
+        [8, 7, 1.11, 0.137]];
+    private static double[][] basicCommonPowers = [[1, 2, 3, 4, 5, 6, 7],
+        [2, 4, 6, 8, 10, 12],
+        [3, 6, 9, 12, 15],
+        [4, 8, 12, 16]];
+    private int[] generatorCount = basicCommonPowers.Select(x => x.Length).ToArray();
+    private static double[] rarePowers = [0.5, 1, 1.5, 2];
+    private static double[] globalProdPower = [1.25];
+    private static double[] critBonusPower = [4];
+    private int[] commonMulti = [3,3,3,3];
+    private int rareMulti = 4;
+
+    private bool globalProd = true;
+    private bool[] canCrit = [true, true, true, true];
+    private int[] critChance = [0, 12, 24, 36, 48, 60, 72, 84, 96];
+    private bool critBonus = true;
+    private int basicCritBonus = 32;
+    private int critMulti = 2;
+}
+
+
+<Calcs IndustryCount="4" GeneratorCount="generatorCount" Costs="Costs" basicOutputs="basicOutputs" basicCommonPowers="basicCommonPowers" rarePowers="rarePowers" commonMulti="commonMulti" rareMulti ="rareMulti" globalProd= "globalProd" critChance ="critChance" critBonus="critBonus" basicCritBonus ="basicCritBonus" critMulti="critMulti" globalProdPower="globalProdPower" critBonusPower="critBonusPower" canCrit="canCrit"/>

@@ -1,0 +1,856 @@
+﻿@using System.Globalization
+
+
+<h3>Calcs</h3>
+
+@code {
+
+    [Parameter]
+    public int IndustryCount { get; set; } = 3;
+    [Parameter]
+    public int[] GeneratorCount { get; set; } = [1, 1, 1];
+
+    [Parameter]
+    public BigNum [][]Costs { get; set; } = new BigNum[4][];
+
+    [Parameter]
+    public double[][] basicOutputs { get; set; } = new double[4][];
+    [Parameter]
+    public double[][] basicCommonPowers { get; set; } = new double[4][];
+    [Parameter]
+    public double[] rarePowers { get; set; } = new double[10];
+    [Parameter]
+    public bool[] canCrit { get; set; } = [false, false, false, false];
+    [Parameter]
+    public int[] commonMulti { get; set; } = [3,3,3];
+    [Parameter]
+    public int rareMulti { get; set; } = 2;
+    [Parameter]
+    public bool globalProd { get; set; } = false;
+    [Parameter]
+    public int[] critChance { get; set; } = [];
+    [Parameter]
+    public bool critBonus { get; set; } = false;
+    [Parameter]
+    public int basicCritBonus { get; set; } = 1;
+    [Parameter]
+    public int critMulti { get; set; } = 1;
+    [Parameter]
+    public double[] globalProdPower { get; set; } = new double[1]{1.0};
+    [Parameter]
+    public double[] critBonusPower { get; set; } = new double[1]{1.0};
+    [Parameter]
+    public int[] discount { get; set; } = new int[1] { 1 };
+
+
+    bool[] autobuy = new bool[4];
+    bool[] replace = new bool[4];
+
+
+    double[] GetRealRarePowers(string rares, double[] rarePowers, int rareMulti = 2)
+    {
+        double[] res = new double[8];
+        for(int i=0; i<rarePowers.Length; i++)
+        {
+            if (i >= rares.Length || rares[i] == '0' || rarePowers[i] == 0.0){
+                res[i] = 1;
+            }
+            else{
+                res[i] = rarePowers[i] * Math.Pow(rareMulti, char.GetNumericValue(rares[i]));
+            }
+        }
+        return res;
+    }
+
+    double[] GetRealOutput(string commons, double[] basicOutput, double[] basicCommonPowers, double rarePower, int commonMulti, double globalProd = 1, double critChance = 0, double critBonus = 0, bool canCrit = false)
+    {
+        if (!canCrit)
+        {
+            critChance = 0;
+        }
+        double[] res = new double[10];
+        double realCritBonus = critBonus == 0 ? basicCritBonus : basicCritBonus * critBonusPower[0]* Math.Pow(critMulti, critBonus);
+
+        for (int i = 0; i < commons.Length && i<basicCommonPowers.Length; i++)
+        {
+            if (commons[i] == '0') res[i] = 0;
+            else
+            {
+                res[i] = basicOutput[i] * basicCommonPowers[i] * Math.Pow(commonMulti, char.GetNumericValue(commons[i])) * rarePower * globalProd * (critChance / 100 * realCritBonus + 1 - critChance / 100);
+            }
+        }       
+        return res;
+    }
+    BigNum[] calcOffline(BigNum[] generators, double[] realOutput, BigNum[] costs, double time, string actions, string buyLimit)
+    {
+        //rnnlb
+        int n = actions.Length-1;
+        BigNum[] res = new BigNum[9];
+        bool buy = false;
+
+        for (int i = n; i >= 0; i--)
+        {
+            if (actions[i] == 's') continue;
+            else if (actions[i] == 'r' || actions[i] == 'n')
+            {
+                double tmp = time * 3600 * realOutput[i];
+                res[i] = new BigNum(res[i + 1].firstPart * tmp, res[i + 1].secondPart);
+                res[i].NormalizeNum();
+            }
+            else if (actions[i] == 'l')
+            {
+                double tmp = time * 3600 * realOutput[i];
+                res[i] = new BigNum(generators[i+1].firstPart * tmp, generators[i+1].secondPart);
+                res[i].NormalizeNum();
+            }
+            else if (actions[i] == 'b')
+            {
+                res[n] = generators[n];
+                buy = true;
+            }
+            if (actions[i] == 'n' || actions[i] == 'l')
+            {
+                res[i] = BigNum.AddNums(res[i], generators[i]);
+            }
+        }
+        if (buy)
+        {
+            BigNum tmpCost = costs[n - 1];
+            if (discount.Length > 1)
+            {
+                tmpCost = BigNum.DivideNums(tmpCost, new BigNum(discountVal));
+            }
+
+            BigNum tmp = BigNum.DivideNums(res[0], tmpCost);
+
+            if (buyLimit != "-1")
+            {
+                BigNum limit = new BigNum(buyLimit);
+                tmp = BigNum.MinNum(tmp, limit);
+            }
+            res[n] = BigNum.AddNums(res[n], tmp);
+        }
+        else if (n > 0)
+        {
+            res[n] = generators[n];
+        }
+
+        res[0] = BigNum.AddNums(res[0], generators[0]);
+        return res;
+    }
+
+    void UpdateGenerators(string[] rawG, BigNum[] gen)
+    {
+        gen[0] = new BigNum("");
+        BigNum[] generatorsNew = GetRealGen(rawG);
+        for (int j = 0; j < generatorsNew.Length; j++)
+        {
+            gen[j + 1] = generatorsNew[j];
+        }
+    }
+
+    void DoCalc(BigNum[] generators, double[] realOutput, BigNum[] costs, string time, string actions, string buyLimit, int industryNum, bool replace){
+
+        time = time.Replace(',', '.');
+        string[] timesRaw = time.Split(';');
+        double[] times = timesRaw.Select(x => double.Parse(x, CultureInfo.InvariantCulture)).ToArray();
+
+        switch (industryNum)
+        {
+            case 1:
+                UpdateGenerators(rawGen1, generators1);
+                for (int i = 0; i < times.Length; i++)
+                {
+                    generators1 = calcOffline(generators1, realOutput, costs, times[i], actions, buyLimit);
+                }
+                break;
+            case 2:
+                UpdateGenerators(rawGen2, generators2);
+                for (int i = 0; i < times.Length; i++)
+                {
+                    generators2 = calcOffline(generators2, realOutput, costs, times[i], actions, buyLimit);
+                }
+                break;
+            case 3:
+                UpdateGenerators(rawGen3, generators3);
+                for (int i = 0; i < times.Length; i++)
+                {
+                    generators3 = calcOffline(generators3, realOutput, costs, times[i], actions, buyLimit);
+                }
+                break;
+            case 4:
+                UpdateGenerators(rawGen4, generators4);
+                for (int i = 0; i < times.Length; i++)
+                {
+                    generators4 = calcOffline(generators4, realOutput, costs, times[i], actions, buyLimit);
+                }
+                break;
+        }
+        return;
+    }
+
+    void replaceVal(int industryNum)
+    {
+        switch (industryNum)
+        {
+            case 1:
+                for (int j = 0; j < GeneratorCount[0]; j++)
+                {
+                    if (generators1[j + 1] is null) break;
+                    rawGen1[j] = generators1[j + 1].ReverseTranslate();
+                }
+                break;
+            case 2:
+                for (int j = 0; j < GeneratorCount[1]; j++)
+                {
+                    if (generators2[j + 1] is null) break;
+                    rawGen2[j] = generators2[j + 1].ReverseTranslate();
+                }
+                break;
+            case 3:
+                for (int j = 0; j < GeneratorCount[2]; j++)
+                {
+                    if (generators3[j + 1] is null) break;
+                    rawGen3[j] = generators3[j + 1].ReverseTranslate();
+                }
+                break;
+            case 4:
+                for (int j = 0; j < GeneratorCount[3]; j++)
+                {
+                    if (generators4[j + 1] is null) break;
+                    rawGen4[j] = generators4[j + 1].ReverseTranslate();
+                }
+                break;
+        }
+    }
+
+    void GenerateActionList(int industryNumber)
+    {
+        int count = 0;
+        switch (industryNumber)
+        {
+            case 1:
+                count = Math.Min(commons1.Length, GeneratorCount[0]);
+                buyLimit = autobuy[0] ? "-1" : "0";
+                break;
+            case 2:
+                count = Math.Min(commons2.Length, GeneratorCount[1]);
+                buyLimit = autobuy[1] ? "-1" : "0";
+                break;
+            case 3:
+                count = Math.Min(commons3.Length, GeneratorCount[2]);
+                buyLimit = autobuy[2] ? "-1" : "0";
+                break;
+            case 4:
+                count = Math.Min(commons4.Length, GeneratorCount[3]);
+                buyLimit = autobuy[3] ? "-1" : "0";
+                break;
+        }
+        actions = "r";
+        for (int i = 2; i < count; i++)
+        {
+            actions += "n";
+        }
+        if (count == 1) actions += "b";
+        else actions += "lb";
+        return;
+    }
+
+    private BigNum[] generators1 = new BigNum[9];
+    private BigNum[] generators2 = new BigNum[9];
+    private BigNum[] generators3 = new BigNum[9];
+    private BigNum[] generators4 = new BigNum[9];
+
+
+    private string commons1 = "666655";
+    private string commons2 = "66654";
+    private string commons3 = "6553";
+    private string commons4 = "666";
+    private string rares = "443";
+
+    private string[] rawGen1 = new string[8];
+    private string[] rawGen2 = new string[8];
+    private string[] rawGen3 = new string[8];
+    private string[] rawGen4 = new string[8];
+
+    private string globalProdLvl = "0";
+    private string critPercent = "0";
+    private string critBonusLvl = "0";
+    private string discountVal = "1";
+
+    private string time = "1";
+    private string buyLimit = "-1";
+    private string actions = "";
+
+    BigNum[] GetRealGen(string[] rawGen)
+    {
+        BigNum[] realGen = rawGen.Select(x => new BigNum(x)).ToArray();
+        return realGen;
+    }
+
+}
+<p>Card levels:</p>
+
+<div class="form-group">
+    <label for="commons1">1st industry commons:</label>
+    <input name="commons1" id="commons1" @bind="commons1"/>
+</div>
+
+<div class="form-group">
+    <label for="commons2">2nd industry commons:</label>
+    <input name="commons2" id="commons2" @bind="commons2" />
+</div>
+
+@if (IndustryCount > 2) {
+    <div class="form-group">
+        <label for="commons3">3rd industry commons:</label>
+        <input name="commons3" id="commons3" @bind="commons3" />
+    </div>
+}
+@if (IndustryCount > 3)
+{
+    <div class="form-group">
+        <label for="commons4">4th industry commons:</label>
+        <input name="commons4" id="commons4" @bind="commons4" />
+    </div>
+}
+<div class="form-group" style="margin-bottom: 1cm">
+    <label for="rares">prod rares:</label>
+    <input name="rares" id="rares" @bind="rares" />
+</div>
+
+@if (globalProd)
+{
+    <div>
+        <label>global prod lvl:</label>
+        <select @bind="globalProdLvl">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+        </select>
+    </div>
+    
+}
+@if (critChance.Length > 1)
+{
+    <div>
+        <label>crit chance %:</label>
+        <select @bind="critPercent">
+            <option value="@critChance[0]">@critChance[0]%</option>
+            <option value="@critChance[1]">@critChance[1]%</option>
+            <option value="@critChance[2]">@critChance[2]%</option>
+            <option value="@critChance[3]">@critChance[3]%</option>
+            <option value="@critChance[4]">@critChance[4]%</option>
+            <option value="@critChance[5]">@critChance[5]%</option>
+            @if(critChance.Length > 6)
+            {
+                <option value="@critChance[6]">@critChance[6]%</option>
+            }
+            @if (critChance.Length > 7)
+            {
+                <option value="@critChance[7]">@critChance[7]%</option>
+            }
+            @if (critChance.Length > 8)
+            {
+                <option value="@critChance[8]">@critChance[8]%</option>
+            }
+        </select>
+    </div>
+    
+}
+@if (discount.Length > 1)
+{
+    <div>
+        <label>discount:</label>
+        <select @bind="discountVal">
+            <option value="@discount[0]">@discount[0]x</option>
+            <option value="@discount[1]">@discount[1]x</option>
+            <option value="@discount[2]">@discount[2]x</option>
+            <option value="@discount[3]">@discount[3]x</option>
+            <option value="@discount[4]">@discount[4]x</option>
+            <option value="@discount[5]">@discount[5]x</option>
+            @if (discount.Length > 6)
+            {
+                <option value="@discount[6]">@discount[6]x</option>
+            }
+            @if (discount.Length > 7)
+            {
+                <option value="@discount[7]">@discount[7]x</option>
+            }
+            @if (discount.Length > 8)
+            {
+                <option value="@discount[8]">@discount[8]x</option>
+            }
+        </select>
+    </div>
+
+}
+@if (critBonus)
+{
+    <div>
+        <label>crit bonus lvl:</label>
+        <select @bind="critBonusLvl">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+        </select>
+    </div>
+}
+<label style="margin-bottom: 1cm"></label>
+
+
+<div class="allIndustries">
+    <div class="industry">
+<div>
+    <p>First industry generators:</p>
+    <label>resource: </label>
+    @if (generators1[0] is not null){
+        @generators1[0].ReverseTranslate()
+    }
+</div>
+<div class="form-group">
+    <label for="i1t1">i1t1: </label>
+    <input name="i1t1" id="i1t1" @bind="rawGen1[0]" />
+    <label>i1t1: </label>
+    @if (generators1[1] is not null)
+    {
+        @generators1[1].ReverseTranslate()
+    }
+</div>
+<div class="form-group">
+    <label for="i1t2">i1t2: </label>
+    <input name="i1t2" id="i1t2" @bind="rawGen1[1]" />
+    <label>i1t2: </label>
+    @if (generators1[2] is not null)
+    {
+        @generators1[2].ReverseTranslate()
+    }
+</div>
+<div class="form-group">
+    <label for="i1t3">i1t3: </label>
+    <input name="i1t3" id="i1t3" @bind="rawGen1[2]" />
+    <label>i1t3: </label>
+    @if (generators1[3] is not null)
+    {
+        @generators1[3].ReverseTranslate()
+    }
+</div>
+<div class="form-group">
+    <label for="i1t4">i1t4: </label>
+    <input name="i1t4" id="i1t4" @bind="rawGen1[3]" />
+    <label>i1t4: </label>
+    @if (generators1[4] is not null)
+    {
+        @generators1[4].ReverseTranslate()
+    }
+</div>
+@if (GeneratorCount[0] > 4)
+{
+<div class="form-group">
+    <label for="i1t5">i1t5: </label>
+    <input name="i1t5" id="i1t5" @bind="rawGen1[4]" />
+    <label>i1t5: </label>
+    @if (generators1[5] is not null)
+    {
+        @generators1[5].ReverseTranslate()
+    }
+</div>
+@if (GeneratorCount[0] > 5)
+{
+<div class="form-group">
+    <label for="i1t6">i1t6: </label>
+    <input name="i1t6" id="i1t6" @bind="rawGen1[5]" />
+    <label>i1t6: </label>
+    @if (generators1[6] is not null)
+    {
+        @generators1[6].ReverseTranslate()
+    }
+</div>
+@if (GeneratorCount[0] > 6)
+{
+    <div class="form-group">
+        <label for="i1t7">i1t7: </label>
+        <input name="i1t7" id="i1t7" @bind="rawGen1[6]" />
+        <label>i1t7: </label>
+        @if (generators1[7] is not null)
+        {
+            @generators1[7].ReverseTranslate()
+        }
+    </div>
+    @if(GeneratorCount[0]> 7)
+    {
+        <div class="form-group">
+            <label for="i1t8">i1t8: </label>
+            <input name="i1t8" id="i1t8" @bind="rawGen1[7]" />
+            <label>i1t8: </label>
+            @if (generators1[8] is not null)
+            {
+                @generators1[8].ReverseTranslate()
+            }
+        </div>
+    }
+    }
+    }
+    
+}
+<div style="margin-bottom: 1cm">
+    <label for="autobuy1">Autobuy bottom?</label>
+    <input name="autobuy1" type="checkbox" @bind="autobuy[0]" />
+    <button @onclick="() => GenerateActionList(1)">Generate ActionList</button>
+    <button @onclick="() => DoCalc(GetRealGen(rawGen1),GetRealOutput(commons1,basicOutputs[0],basicCommonPowers[0],GetRealRarePowers(rares,rarePowers,rareMulti)[0],commonMulti[0],GetRealRarePowers(globalProdLvl,globalProdPower,rareMulti)[0],double.Parse(critPercent, CultureInfo.InvariantCulture),double.Parse(critBonusLvl, CultureInfo.InvariantCulture),canCrit[0]),Costs[0],time, actions,buyLimit,1,replace[0])">Calc Industry1 </button>
+    <button @onclick="() => replaceVal(1)">Result as input</button>
+</div>
+</div>
+
+    <div class="industry">
+<div>
+    <p>Second industry generators:</p>
+    <label>resource: </label>
+    @if (generators2[0] is not null)
+    {
+        @generators2[0].ReverseTranslate()
+    }
+</div>
+<div class="form-group">
+    <label for="i2t1">i2t1: </label>
+    <input name="i2t1" id="i2t1" @bind="rawGen2[0]" />
+    <label>i2t1: </label>
+    @if (generators2[1] is not null)
+    {
+        @generators2[1].ReverseTranslate()
+    }
+</div>
+<div class="form-group">
+    <label for="i2t2">i2t2: </label>
+    <input name="i2t2" id="i2t2" @bind="rawGen2[1]" />
+    <label>i2t2: </label>
+    @if (generators2[2] is not null)
+    {
+        @generators2[2].ReverseTranslate()
+    }
+</div>
+<div class="form-group">
+    <label for="i2t3">i2t3: </label>
+    <input name="i2t3" id="i2t3" @bind="rawGen2[2]" />
+    <label>i2t3: </label>
+    @if (generators2[3] is not null)
+    {
+        @generators2[3].ReverseTranslate()
+    }
+</div>
+@if (GeneratorCount[1] > 3)
+{
+<div class="form-group">
+    <label for="i2t4">i2t4: </label>
+    <input name="i2t4" id="i2t4" @bind="rawGen2[3]" />
+    <label>i2t4: </label>
+    @if (generators2[4] is not null)
+    {
+        @generators2[4].ReverseTranslate()
+    }
+</div>
+@if (GeneratorCount[1] > 4)
+{
+<div class="form-group">
+    <label for="i2t5">i2t5: </label>
+    <input name="i2t5" id="i2t5" @bind="rawGen2[4]" />
+    <label>i2t5: </label>
+    @if (generators2[5] is not null)
+    {
+        @generators2[5].ReverseTranslate()
+    }
+</div>
+@if (GeneratorCount[1] > 5)
+{
+    <div class="form-group">
+        <label for="i2t6">i2t6: </label>
+        <input name="i2t6" id="i2t6" @bind="rawGen2[5]" />
+        <label>i2t6: </label>
+        @if (generators2[6] is not null)
+        {
+            @generators2[6].ReverseTranslate()
+        }
+    </div>
+    @if (GeneratorCount[1] > 6)
+    {
+        <div class="form-group">
+            <label for="i2t7">i2t7: </label>
+            <input name="i2t7" id="i2t7" @bind="rawGen2[6]" />
+            <label>i2t7: </label>
+            @if (generators2[7] is not null)
+            {
+                @generators2[7].ReverseTranslate()
+            }
+        </div>
+        @if (GeneratorCount[1] > 7)
+        {
+            <div class="form-group">
+                <label for="i2t8">i2t8: </label>
+                <input name="i2t8" id="i2t8" @bind="rawGen2[7]" />
+                <label>i2t8: </label>
+                @if (generators2[8] is not null)
+                {
+                    @generators2[8].ReverseTranslate()
+                }
+            </div>
+        }
+    }
+    }
+    }
+}
+
+<div style="margin-bottom: 1cm">
+    <label for="autobuy2">Autobuy bottom?</label>
+    <input name="autobuy2" type="checkbox" @bind="autobuy[1]" />
+    <button @onclick="() => GenerateActionList(2)">Generate ActionList</button>
+            <button @onclick="() => DoCalc(GetRealGen(rawGen2),GetRealOutput(commons2,basicOutputs[1],basicCommonPowers[1],GetRealRarePowers(rares,rarePowers,rareMulti)[1],commonMulti[1],GetRealRarePowers(globalProdLvl,globalProdPower,rareMulti)[0],double.Parse(critPercent, CultureInfo.InvariantCulture),double.Parse(critBonusLvl, CultureInfo.InvariantCulture),canCrit[1]),Costs[1],time,actions,buyLimit,2,replace[1])">Calc Industry2</button>
+    <button @onclick="() => replaceVal(2)">Result as input</button>
+</div>
+</div>
+
+@if (IndustryCount > 2)
+{
+        <div class ="industry">
+    <div>
+        <p>Third industry generators:</p>
+        <label>resource: </label>
+        @if (generators3[0] is not null)
+        {
+            @generators3[0].ReverseTranslate()
+        }
+    </div>
+    <div class="form-group">
+        <label for="i3t1">i3t1: </label>
+        <input name="i3t1" id="i3t1" @bind="rawGen3[0]" />
+        <label>i3t1: </label>
+        @if (generators3[1] is not null)
+        {
+            @generators3[1].ReverseTranslate()
+        }
+    </div>
+    <div class="form-group">
+        <label for="i3t2">i3t2: </label>
+        <input name="i3t2" id="i3t2" @bind="rawGen3[1]" />
+        <label>i3t2: </label>
+        @if (generators3[2] is not null)
+        {
+            @generators3[2].ReverseTranslate()
+        }
+    </div>
+    <div class="form-group">
+        <label for="i3t3">i3t3: </label>
+        <input name="i3t3" id="i3t3" @bind="rawGen3[2]" />
+        <label>i3t3: </label>
+        @if (generators3[3] is not null)
+        {
+            @generators3[3].ReverseTranslate()
+        }
+    </div>
+            @if (GeneratorCount[2] > 3)
+            {
+    <div class="form-group">
+        <label for="i3t4">i3t4: </label>
+        <input name="i3t4" id="i3t4" @bind="rawGen3[3]" />
+        <label>i3t4: </label>
+        @if (generators3[4] is not null)
+        {
+            @generators3[4].ReverseTranslate()
+        }
+    </div>
+    @if (GeneratorCount[2] > 4)
+    {
+        <div class="form-group">
+            <label for="i3t5">i3t5: </label>
+            <input name="i3t5" id="i3t5" @bind="rawGen3[4]" />
+            <label>i3t5: </label>
+            @if (generators3[5] is not null)
+            {
+                @generators3[5].ReverseTranslate()
+            }
+        </div>
+                    @if (GeneratorCount[2] > 5)
+                    {
+                        <div class="form-group">
+                            <label for="i3t6">i3t6: </label>
+                            <input name="i3t6" id="i3t6" @bind="rawGen3[5]" />
+                            <label>i3t6: </label>
+                            @if (generators3[6] is not null)
+                            {
+                                @generators3[6].ReverseTranslate()
+                            }
+                        </div>
+                        @if (GeneratorCount[2] > 6)
+                        {
+                            <div class="form-group">
+                                <label for="i3t7">i3t7: </label>
+                                <input name="i3t7" id="i3t7" @bind="rawGen3[6]" />
+                                <label>i3t7: </label>
+                                @if (generators3[7] is not null)
+                                {
+                                    @generators3[7].ReverseTranslate()
+                                }
+                            </div>
+                            @if (GeneratorCount[2] > 7)
+                            {
+                                <div class="form-group">
+                                    <label for="i3t8">i3t8: </label>
+                                    <input name="i3t8" id="i3t8" @bind="rawGen3[7]" />
+                                    <label>i3t8: </label>
+                                    @if (generators3[8] is not null)
+                                    {
+                                        @generators3[8].ReverseTranslate()
+                                    }
+                                </div>
+                            }
+                        }
+
+                    }
+                }
+    }
+    <div style="margin-bottom: 1cm">
+        <label for="autobuy3">Autobuy bottom?</label>
+        <input name="autobuy3" type="checkbox" @bind="autobuy[2]" />
+        <button @onclick="() => GenerateActionList(3)">Generate ActionList</button>
+                <button @onclick="() => DoCalc(GetRealGen(rawGen3),GetRealOutput(commons3,basicOutputs[2],basicCommonPowers[2],GetRealRarePowers(rares,rarePowers,rareMulti)[2],commonMulti[2],GetRealRarePowers(globalProdLvl,globalProdPower,rareMulti)[0],double.Parse(critPercent, CultureInfo.InvariantCulture),double.Parse(critBonusLvl, CultureInfo.InvariantCulture),canCrit[2]),Costs[2],time, actions,buyLimit,3,replace[2])">Calc Industry3 </button>
+        <button @onclick="() => replaceVal(3)">Result as input</button>
+    </div>
+            </div>
+}
+
+
+@if (IndustryCount > 3)
+{
+        <div class="industry">
+    <div>
+        <p>Fourth industry generators:</p>
+        <label>resource: </label>
+        @if (generators4[0] is not null)
+        {
+            @generators4[0].ReverseTranslate()
+        }
+    </div>
+    <div class="form-group">
+        <label for="i4t1">i4t1: </label>
+        <input name="i4t1" id="i4t1" @bind="rawGen4[0]" />
+        <label>i4t1: </label>
+        @if (generators4[1] is not null)
+        {
+            @generators4[1].ReverseTranslate()
+        }
+    </div>
+    <div class="form-group">
+        <label for="i4t2">i4t2: </label>
+        <input name="i4t2" id="i4t2" @bind="rawGen4[1]" />
+        <label>i4t2: </label>
+        @if (generators4[2] is not null)
+        {
+            @generators4[2].ReverseTranslate()
+        }
+    </div>
+    <div class="form-group">
+        <label for="i4t3">i4t3: </label>
+        <input name="i4t3" id="i4t3" @bind="rawGen4[2]" />
+        <label>i4t3: </label>
+        @if (generators4[3] is not null)
+        {
+            @generators4[3].ReverseTranslate()
+        }
+    </div>
+            @if (GeneratorCount[3] > 3)
+            {
+    <div class="form-group">
+        <label for="i4t4">i4t4: </label>
+        <input name="i4t4" id="i4t4" @bind="rawGen4[3]" />
+        <label>i4t4: </label>
+        @if (generators4[4] is not null)
+        {
+            @generators4[4].ReverseTranslate()
+        }
+    </div>
+    @if (GeneratorCount[3] > 4)
+    {
+        <div class="form-group">
+            <label for="i4t5">i4t5: </label>
+            <input name="i4t5" id="i4t5" @bind="rawGen4[4]" />
+            <label>i4t5: </label>
+            @if (generators4[5] is not null)
+            {
+                @generators4[5].ReverseTranslate()
+            }
+        </div>
+                    @if (GeneratorCount[3] > 5)
+                    {
+                        <div class="form-group">
+                            <label for="i4t6">i4t6: </label>
+                            <input name="i4t6" id="i4t6" @bind="rawGen4[5]" />
+                            <label>i4t6: </label>
+                            @if (generators4[6] is not null)
+                            {
+                                @generators4[6].ReverseTranslate()
+                            }
+                        </div>
+                        @if (GeneratorCount[3] > 6)
+                        {
+                            <div class="form-group">
+                                <label for="i4t7">i4t7: </label>
+                                <input name="i4t7" id="i4t7" @bind="rawGen4[6]" />
+                                <label>i4t7: </label>
+                                @if (generators4[7] is not null)
+                                {
+                                    @generators4[7].ReverseTranslate()
+                                }
+                            </div>
+                            @if (GeneratorCount[3] > 7)
+                            {
+                                <div class="form-group">
+                                    <label for="i4t8">i4t8: </label>
+                                    <input name="i4t8" id="i4t8" @bind="rawGen4[7]" />
+                                    <label>i4t8: </label>
+                                    @if (generators4[8] is not null)
+                                    {
+                                        @generators4[8].ReverseTranslate()
+                                    }
+                                </div>
+                            }
+                        }
+
+                    }
+                }
+    }
+    <div style="margin-bottom: 1cm">
+        <label for="autobuy4">Autobuy bottom?</label>
+        <input name="autobuy4" type="checkbox" @bind="autobuy[3]" />
+        <button @onclick="() => GenerateActionList(4)">Generate ActionList</button>
+                <button @onclick="() => DoCalc(GetRealGen(rawGen4),GetRealOutput(commons4,basicOutputs[3],basicCommonPowers[3],GetRealRarePowers(rares,rarePowers,rareMulti)[3],commonMulti[3],GetRealRarePowers(globalProdLvl,globalProdPower,rareMulti)[0],double.Parse(critPercent, CultureInfo.InvariantCulture),double.Parse(critBonusLvl, CultureInfo.InvariantCulture),canCrit[3]),Costs[3],time, actions,buyLimit,4,replace[3])">Calc Industry4 </button>
+        <button @onclick="() => replaceVal(4)">Result as input</button>
+    </div>
+            </div>
+}
+</div>
+<div class="industry">
+<p>Global settings: </p>
+<div class="form-group">
+    <label for="time">time in hours: </label>
+    <input name="time" id="time" @bind="time" />
+</div>
+<div class="form-group">
+    <label for="actions">action list: </label>
+    <input name="actions" id="actions" @bind="actions" />
+</div>
+<div class="form-group">
+    <label for="buyLimit">buy limit for bottom generator: </label>
+    <input name="buyLimit" id="buyLimit" @bind="buyLimit" />
+</div>
+    </div>

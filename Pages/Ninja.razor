@@ -1,0 +1,23 @@
+﻿@page "/ninja"
+
+<h3>Ninja/Crusade</h3>
+
+@code {
+    private static string[][] rawCosts = [["10", "1000", "100 b", "10 cc", "100 ff", "10 ii"],
+        ["25", "100 m", "10 bb", "10 ee", "100 hh"],
+        ["50", "100 b", "1 cc", "10 ff"]];
+    private static BigNum[][] Costs = rawCosts.Select(x => x.Select(y => new BigNum(y)).ToArray()).ToArray();
+
+    private static double[][] basicOutputs = [[2, 1, .444, .185, .0741, .0288],
+        [2, 1, .375, .125, .0391],
+        [2, .75, .194, .044]];
+    private static double[][] basicCommonPowers = [[1.5, 2, 2.5, 3, 3.5, 4],
+        [2.5, 3, 3.5, 4, 4.5],
+        [3.5, 4, 4.5, 5]];
+    private int[] generatorCount = basicCommonPowers.Select(x => x.Length).ToArray();
+    private static double[] rarePowers = [2, 3, 4];
+    private int[] commonMulti = [2,2,2];
+
+}
+
+<Calcs IndustryCount="3" GeneratorCount="generatorCount" Costs="Costs" basicOutputs="basicOutputs" basicCommonPowers="basicCommonPowers" rarePowers="rarePowers" commonMulti="commonMulti" rareMulti="2" />
